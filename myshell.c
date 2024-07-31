@@ -57,16 +57,19 @@ void findRedirect(char *args[]) {               // リダイレクトの指示�
     if (strcmp(args[i], "<")==0) {              // 入力リダイレクト発見
       ifile = args[++i];                        //   ファイル名を記録する
       if (ifile==NULL) break;                   //   ファイル名が無かった
+     
     } else if (strcmp(args[i], ">")==0) {       // 出力リダイレクト発見
       ofile = args[++i];                        //   ファイル名を記録する
       if (ofile==NULL) break;                   //   ファイル名が無かった
+      
     } else {                                    // どちらでもない
       args[j++] = args[i];                      //   文字列をargsに記録する
     }
   }
   args[j] = NULL;
 }
-
+int fd;
+int flag;
 void redirect(int fd, char *path, int flag) {   // リダイレクト処理をする
   //
   // externalCom 関数のどこかから呼び出される
@@ -77,9 +80,25 @@ void redirect(int fd, char *path, int flag) {   // リダイレクト処理を�
   //        入力の場合 O_RDONLY
   //        出力の場合 O_WRONLY|O_TRUNC|O_CREAT
   //
+  if (ifile != NULL ) {
+    fd = open (path, O_RDONLY, 0644);
+    if (fd != 1) {
+      fprintf (stderr, "何らかのエラー\n" );
+      exit(1);
+    }
+    
+  } else if (ofile != NULL ) {
+    fd = open (path, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+    if (fd != 1) {
+      fprintf (stderr, "何らかのエラー\n");
+      exit(1);
+    }
+  }
 }
 
 void externalCom(char *args[]) {                // 外部コマンドを実行する
+  
+  redirect (fd, *args, flag);
   int pid, status;
   if ((pid = fork()) < 0) {                     //   新しいプロセスを作る
     perror("fork");                             //     fork 失敗
@@ -94,6 +113,8 @@ void externalCom(char *args[]) {                // 外部コマンドを実行�
       ;
   }
 }
+
+
 
 void execute(char *args[]) {                    // コマンドを実行する
   if (strcmp(args[0], "cd")==0) {               // cd コマンド
